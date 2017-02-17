@@ -172,7 +172,12 @@ void eval(char *cmdline)
 
     if(!builtin_cmd(argv))
     {
-        printf("fork and exec\n");
+       // printf("fork and exec\n");
+        if(!bg)
+        {
+            execvp(argv[0],argv);
+        }
+        wait(NULL);
     }
     return;
 }
