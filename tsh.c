@@ -167,17 +167,30 @@ int main(int argc, char **argv)
 void eval(char *cmdline) 
 {
     int bg;
+    int stat;
     char *argv[MAXARGS];
+    if(strcmp(cmdline,"\n") == 0)
+    {
+        return;
+    }
     bg = parseline(cmdline,argv);
-
+    pid_t cpid;
+    int e = 0;
     if(!builtin_cmd(argv))
     {
        // printf("fork and exec\n");
-        if(!bg)
+        if((cpid = fork()) == 0)
         {
-            execvp(argv[0],argv);
+          e =  execvp(argv[0],argv);
+          //printf("%d\n",e);
+           printf("%s: command not found\n",argv[0]);
+           exit(0);
         }
-        wait(NULL);
+        
+        if(!bg )
+         waitpid(cpid,&stat,0);
+        else 
+         waitpid(cpid,&stat,WNOHANG);
     }
     return;
 }
@@ -249,14 +262,85 @@ int builtin_cmd(char **argv)
     {
         exit(0);
     }
+    if(strcmp(argv[0],"jobs") == 0)
+    {
+        listjobs(jobs);
+        return 1;
+    }
+    if(strcmp(argv[0],"fg") == 0)
+    {
+        do_bgfg(argv);
+        return 1;
+    }
+    if(strcmp(argv[0],"bg") == 0)
+    {
+        do_bgfg(argv);
+        return 1;
+    }
     return 0;     /* not a builtin command */
 }
 
 /* 
  * do_bgfg - Execute the builtin bg and fg commands
  */
+ int numbers_only(const char *s)
+{
+    while (*s) {
+        if (isdigit(*s++) == 0) return 0;
+    }
+
+    return 1;
+}
+
+int is_job_id(const char *s)
+{
+    if(*s != '%')
+        return 0;
+    s++;
+    while(*s){
+        if(isdigit(*s++) == 0)  return 0;
+    }
+    
+    return 1;
+}
 void do_bgfg(char **argv) 
 {
+    if(argv[1] == NULL)
+    {
+        printf("fg command requires PID or %%jobid argument\n");
+        return;
+    }
+    else if(numbers_only(argv[1]))
+    {
+        //printf("is integer\n");
+        struct jobs_t pid[MAXJOBS];
+        pid = getjobpid(jobs,atoi(argv[1]));
+        if(pid != NULL)
+        {
+
+        }else
+        {
+            printf("(%s): No such process\n",argv[1]);
+        }
+        return;
+    }
+    else if(is_job_id(argv[1]))
+    {
+        //printf("is job id\n");
+        struct jobs_t jid[MAXJOBS];
+        jid = getjobjid(jobs,argv[1]);
+        if(jid != NULL)
+        {
+
+        }else
+        {
+            printf("fg %s: No such job \n",argv[1]);
+        }
+        return;
+    }
+    else{
+        printf("fg: argument must be a PID or %%jobid\n");
+    }
     return;
 }
 
