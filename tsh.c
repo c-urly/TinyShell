@@ -192,7 +192,7 @@
 					{
 						//pgid = setpgrp();
 						setpgid(getpid(),0);
-						printf("group id : %d\n",getpgrp());
+						//printf("group id : %d\n",getpgrp());
 						//printf("pgid = %d\n",pgid);
 						execvp(argv[0],argv);
 						//printf("%d\n",e);
@@ -201,7 +201,7 @@
 					}
 				else if(cpid < 0) return;
 
-				printf("parent group id : %d\n",getpgrp());
+				//printf("parent group id : %d\n",getpgrp());
 					addjob(jobs,cpid,stat,cmdline);
 					sigprocmask(SIG_UNBLOCK,&set1,NULL);
 						int i;
@@ -219,7 +219,7 @@
 					{
 				//    pgid = setpgrp();
 						setpgid(getpid(),0);
-						printf(" forked child group id : %d\n",getpgrp());
+						//printf(" forked child group id : %d\n",getpgrp());
 						//printf("pgid = %d\n",pgid);
 						execvp(argv[0],argv);
 						//printf("%d\n",e);
@@ -228,7 +228,7 @@
 					}
 				else if(cpid < 0) return;
 
-				printf("parent group id : %d\n",getpgrp());
+				//printf("parent group id : %d\n",getpgrp());
 					addjob(jobs,cpid,stat,cmdline);
 					sigprocmask(SIG_UNBLOCK,&set1,NULL);
 					waitfg(cpid); 
@@ -309,6 +309,7 @@
 	 */
 	int builtin_cmd(char **argv) 
 	{
+
 			if(strcmp(argv[0],"quit") == 0)
 			{
 					exit(0);
@@ -350,7 +351,7 @@
 					return 0;
 			s++;
 			while(*s){
-					if(isdigit(*s) == 0) 
+					if(isdigit(*s++) == 0) 
 					 return 0;
 			}
 			
@@ -370,9 +371,9 @@
 		 
 		if(numbers_only(argv[1]))
 			{
-					//printf("is integer\n");
 					struct job_t *jid;
 					int p_id = atoi(argv[1]);
+					printf("%d\n",p_id);
 					jid = getjobpid(jobs,p_id);
 					if(jid != NULL)
 					{
@@ -381,14 +382,16 @@
 									case ST:
 									{
 									 jid->state = FG;
-									 kill(-jid->pid,SIGCONT);
+									 kill(-(jid->pid),SIGCONT);
 									 waitfg(jid->pid);
+									 break;
 									}
 
 									case BG:
 									{
 										jid->state = FG;
 										waitfg(jid->pid);
+										break;
 									}
 
 									default:
@@ -409,7 +412,7 @@
 					for(int i = 0;i< len-1;i++)
 						argv[1][i] = argv[1][i+1];
 					argv[1][len-1] = '\0';
-					printf("%s\n",argv[1] );
+				//	printf("argv[1] : %s\n",argv[1] );
 					struct job_t *jid;
 					jid = getjobjid(jobs,atoi(argv[1]));
 					if(jid != NULL)
@@ -420,14 +423,16 @@
 									case ST:
 									{
 									 jid->state = FG;
-									 kill(-jid->pid,SIGCONT);
+									 kill(-(jid->pid),SIGCONT);
 									 waitfg(jid->pid);
+									 break;
 									}
 
 									case BG:
 									{
 										jid->state = FG;
 										waitfg(jid->pid);
+										break;
 									}
 
 									default:
@@ -471,8 +476,9 @@
 									case ST:
 									{
 									 jid->state = BG;
-									 kill(-jid->pid,SIGCONT);
-									 waitfg(jid->pid);
+									 kill(-(jid->pid),SIGCONT);
+									 //waitfg(jid->pid);
+									 break;
 									}
 
 									default:
@@ -503,8 +509,9 @@
 									case ST:
 									{
 									 jid->state = BG;
-									 kill(-jid->pid,SIGCONT);
-									 waitfg(jid->pid);
+									 kill(-(jid->pid),SIGCONT);
+									 //waitfg(jid->pid);
+									 break;
 									}
 									default:
 									printf("%s\n","default bg" );
@@ -561,7 +568,6 @@
 	pid_t pid;
 	struct job_t *job;
 		while((pid = waitpid(-1,&stat,WNOHANG | WUNTRACED)) > 0){
-					printf("SIGCHLD AYYYUUUU\n");
 			job = getjobpid(jobs,pid);
 			if(WIFEXITED(stat))
 			{
@@ -574,7 +580,7 @@
 			}
 			if(WIFSTOPPED(stat)){
 				job->state = ST;
-				printf("Job [%d] (%d) stopped by signal %d\n", job->jid,job->pid,WTERMSIG(stat));
+				printf("Job [%d] (%d) stopped by signal %d\n", job->jid,job->pid,WSTOPSIG(stat));
 			}
 		}
 			return;
@@ -607,10 +613,10 @@
 		// int i;
 		if(fpid > 0)
 		{
-				 kill(-fpid,SIGSTOP);
-				struct job_t *job = getjobpid(jobs,fpid); 
+				 kill(-fpid,SIGTSTP);
+				//struct job_t *job = getjobpid(jobs,fpid); 
 				//job->state = ST;
-			printf("Job [%d] (%d) stopped by signal %d    %s\n", job->jid,job->pid,SIGTSTP,job->cmdline);
+			/*printf("Job [%d] (%d) stopped by signal %d    %s\n", job->jid,job->pid,SIGTSTP,job->cmdline);*/
 			return;
 		}
 			return;
