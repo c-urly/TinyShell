@@ -312,6 +312,16 @@
 
 			if(strcmp(argv[0],"quit") == 0)
 			{
+				int i;
+				for(i = 0;i<MAXJOBS;i++)
+				{
+					if(jobs[i].state == ST)		
+						{
+							printf("There are jobs which are stopped!! Terminate them\nUse kill -9 <pid>\n");
+							listjobs(jobs);
+							return 1;
+						}
+				}
 					exit(0);
 			}
 			if(strcmp(argv[0],"jobs") == 0)
